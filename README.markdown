@@ -13,15 +13,13 @@ Class for packing and unpacking C structs in Swift, modeled after the [struct](h
     //      uint32_t length;   // Length of data in bytes.
     //      uint8_t data[];    // Binary encoded plist.
     //  } __attribute__((packed)) mma_msg_t;
-    func sendMessageHeader(msgData: NSData) -> Bool {
-        var error: NSError?
-        
+    func sendMessageHeader(msgData: Data) -> Bool {
         let version = 0x0100
         let reserved = 0
         
         let packer = CStruct(format: "=HHI")
-        if let packedHeader = packer.pack([version, reserved, msgData.length], error: &error) {
-            return 8 == send(socket_fd, packedHeader.bytes, packedHeader.length)
+        if case .success(let packedHeader) = packer.pack([version, reserved, msgData.count] as [AnyObject]) {
+            return 8 == send(socket_fd, [UInt8](packedHeader), packedHeader.count)
         } else {
             return false
         }
@@ -37,23 +35,23 @@ Class for packing and unpacking C structs in Swift, modeled after the [struct](h
 
 ## Unpacking data
 
-### - unpack:format:error:
+### - unpack:format:
 
-    func unpack(data: NSData, format: String, error: NSErrorPointer) -> AnyObject[]?
+    func unpack(_ data: Data, format: String) -> Result<[AnyObject]?, CStructError>
 
-### - unpack:error:
+### - unpack:
 
-    func unpack(data: NSData, error: NSErrorPointer) -> AnyObject[]?
+    func unpack(_ data: Data) -> Result<[AnyObject]?, CStructError>
 
 ## Packing values
 
-### - pack:format:error:
+### - pack:format:
 
-    func pack(values: AnyObject[], format: String, error: NSErrorPointer) -> NSData?
+    func pack(_ values: AnyObject[], format: String) -> Result<Data?, CStructError>
 
-### - pack:error:
+### - pack:
 
-    func pack(values: AnyObject[], error: NSErrorPointer) -> NSData? {
+    func pack(_ values: AnyObject[]) -> Result<Data?, CStructError>
 
 
 # Format strings
